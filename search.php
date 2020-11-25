@@ -180,74 +180,102 @@
                 $month = $_POST['month'];
                 $day = $_POST['day'];
 
-                $sql = "";
+                $sql = ""; 
+                #Am adăugat stringul acesta gol la început pentru a putea apela funția de la linia 246
 
+                $emptyQuery = False; 
+                #Am adăugat variabila asta pentru a nu apărea o eroare dacă a fost căutată data default pe lângă mesajul afișat
 
-                if ( ($year=='-') && ($month=='-') && ($day=='-') ){
+                if ( ($year=='-') && ($month=='-') && ($day=='-') ) { #Dacă data rămâne default trece prin if-ul acesta
                     echo "Nu a fost gasit nici-un eveniment care sa corespunda datei introduse!";
 
-                } elseif (($year!='-') && ($month=='-') && ($day=='-')) {
+                    $emptyQuery = True;
+                    #aici schimbăm valoarea variabilei în true (dacă se apelează data default) pentru a nu se executa if-ul de la linia 246
 
-                    $date = $year;
+                } elseif (($year!='-') && ($month=='-') && ($day=='-')) { #Dacă doar anul e diferit de - trece prin if-ul acesta
+
                     $sql = "SELECT eventName, eventDate 
                         FROM events 
-                        WHERE YEAR(eventDate) = '$date' ";
+                        WHERE YEAR(eventDate) = '$year' ";
 
-                } elseif (($year=='-') && ($month!='-') && ($day=='-')) {
+                } elseif (($year=='-') && ($month!='-') && ($day=='-')) { #Dacă doar luna e diferită de - trece prin if-ul acesta
 
-                    $date = $month;
                     $sql = "SELECT eventName, eventDate 
                         FROM events 
-                        WHERE MONTH(eventDate) = '$date' ";
+                        WHERE MONTH(eventDate) = '$month' ";
 
-                } elseif (($year=='-') && ($month=='-') && ($day!='-')) {
+                } elseif (($year=='-') && ($month=='-') && ($day!='-')) { #Dacă doar ziua e diferită de - trece prin if-ul acesta
 
-                    $date = $day;
                     $sql = "SELECT eventName, eventDate 
                         FROM events 
-                        WHERE DAY(eventDate) = '$date' ";
+                        WHERE DAY(eventDate) = '$day' ";
 
+                } elseif (($year!='-') && ($month!='-') && ($day=='-')) { #Dacă anul și luna sunt diferite de - trece prin if-ul acesta
+
+                	$sql = "SELECT eventName, eventDate 
+                        FROM events 
+                        WHERE YEAR(eventDate) = '$year' AND MONTH(eventDate) = '$month' ";
+                } elseif (($year!='-') && ($month='-') && ($day!='-')) { #Dacă anul și ziua sunt diferite de - trece prin if-ul acesta
+
+                	$sql = "SELECT eventName, eventDate 
+                        FROM events 
+                        WHERE YEAR(eventDate) = '$year' AND DAY(eventDate) = '$day' ";
+                } elseif (($year!='-') && ($month='-') && ($day!='-')) { #Dacă luna și ziua sunt diferite de - trece prin if-ul acesta
+
+                	$sql = "SELECT eventName, eventDate 
+                        FROM events 
+                        WHERE MONTH(eventDate) = '$month' AND DAY(eventDate) = '$day' ";
+                } elseif (($year!='-') && ($month='-') && ($day!='-')) { #Dacă anul, luna și ziua sunt diferite de - trece prin if-ul acesta
+
+                	$sql = "SELECT eventName, eventDate 
+                        FROM events 
+                        WHERE YEAR(eventDate) = '$year' AND MONTH(eventDate) = '$month' AND DAY(eventDate) = '$day'";
+
+                    /*
+                    Se poate inlocui cu codul acesta. E același query doar că aici se face stringul de dată și se folosește funcția DATE din mysql.
+                    $date = $year."-".$month."-".$day;
+                	$sql = "SELECT eventName, eventDate 
+                        FROM events 
+                        WHERE DATE(eventDate) = '$date'";
+                	*/
                 }
-                #TO-DO rest
-
-                #$date = $year."-".$month."-".$day;
-                
-                
 
                 $ok = True;
 
-                if ($result = mysqli_query($conn, $sql)) {
-                    
 
-                    while($row = mysqli_fetch_array($result)){
-                        if ($ok){
-                            echo "<table border='0'>
-                            <tr>
-                                <th>
-                                    Nume Eveniment
-                                </th>
-                                <th>
-                                    Data eveniment
-                                </th>
-                            </tr>";
-                            $ok = False;
-                        }
-                        echo "<tr>";
-                        echo "<td>" . $row['eventName'] . "</td>";
-                        echo "<td>" . $row['eventDate'] . "</td>";
-                        echo "</tr>";
-                    }
-                    echo "</table>";
+                if (!$emptyQuery) {
+                    	
+	                if ($result = mysqli_query($conn, $sql)) { #Apeleaza query-ul cu parametrii conexiune și query-ul salvat în variabila sql
+	                    
+	                    while($row = mysqli_fetch_array($result)){ #Cât timp avem un răspuns la query while-ul continuă.
+	                        if ($ok) {	#Crează titlul coloanelor și după schimbă ok-ul în fals ca să nu mai treacă prin acest if.
+	                            echo "<table border='0'>
+	                            <tr>
+	                                <th>
+	                                    Nume Eveniment
+	                                </th>
+	                                <th>
+	                                    Data eveniment
+	                                </th>
+	                            </tr>";
+	                            $ok = False;
+	                        }
+	                        echo "<tr>";
+	                        echo "<td>" . $row['eventName'] . "</td>";
+	                        echo "<td>" . $row['eventDate'] . "</td>";
+	                        echo "</tr>";
+	                    }
+	                    echo "</table>";
 
-                    if ($ok){
-                        echo "Nu a fost gasit nici-un eveniment care sa corespunda datei introduse!";
-                    }
-                }
-                else {
-                    echo "error " . mysqli_error($conn);
-                }
+	                    if ($ok) {	#Dacă ok-ul rămâne true înseamnă că nu a trecut prin if-ul de mai sus, ceea ce înseamnă că nu am avut un rezultat.
+	                        echo "Nu a fost gasit nici-un eveniment care sa corespunda datei introduse!";
+	                    }
+	                }
+	                else {
+	                	echo "error " . mysqli_error($conn); #Dacă query-ul nu este ok afișează eroarea în pagină.
+	                }
                  
-          
-            $conn->close();
+          	}
+            $conn->close(); #La final închidem conexiunea.
     }
     ?>
